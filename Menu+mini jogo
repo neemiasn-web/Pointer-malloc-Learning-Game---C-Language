@@ -1,0 +1,188 @@
+#include "raylib.h"
+
+typedef enum GameState {
+    MENU,
+    GAME,
+    INSTRUCTIONS,
+    GAME_OVER,
+    VICTORY
+} GameState;
+
+// Estrutura para os coletáveis (moedas)
+typedef struct {
+    Rectangle rec;
+    bool ativa;
+} Moeda;
+
+int main(void) {
+    const int screenWidth = 800;
+    const int screenHeight = 600;
+    const float tamanhoJogador = 40.0f;
+
+    InitWindow(screenWidth, screenHeight, "==* Cacador de Moedas *==");
+    SetTargetFPS(60);
+    
+    InitAudioDevice();
+    Sound soundMenu = LoadSound("menu.mp3");
+    Sound soundJogo = LoadSound("jogo.mp3");
+    
+    GameState estadoAtual = MENU;
+    
+    // Variáveis do jogador
+    Rectangle jogador = { 400.0f, 225.0f, tamanhoJogador, tamanhoJogador };
+    float velocidade = 5.0f;
+    int pontos = 0;
+    const int totalMoedas = 3;
+
+    // Definindo as moedas
+    Moeda moedas[3] = {
+        { { 150, 100, 25, 25 }, true },
+        { { 600, 450, 25, 25 }, true },
+        { { 100, 500, 25, 25 }, true }
+    };
+
+    // Definindo os obstáculos (Lava)
+    Rectangle obstaculos[4] = {
+        { 300, 200, 40, 40 },
+        { 200, 350, 40, 40 },
+        { 500, 150, 100, 40 },
+        { 450, 350, 40, 100 }
+    };
+
+    while (!WindowShouldClose()) {
+        // ====================================================================
+        // 1. ATUALIZAÇÃO LÓGICA
+        // ====================================================================
+        switch (estadoAtual) {
+            case MENU:
+                if (IsKeyPressed(KEY_ENTER)) {
+                    estadoAtual = GAME;  
+                    PlaySound(soundJogo);
+                } else if (IsKeyPressed(KEY_I)) {
+                    estadoAtual = INSTRUCTIONS;
+                    PlaySound(soundMenu);
+                }
+                break;
+
+            case INSTRUCTIONS:
+                if (IsKeyPressed(KEY_BACKSPACE)) estadoAtual = MENU;
+                break;
+
+            case GAME:
+                // Movimentação
+                if (IsKeyDown(KEY_RIGHT) && (jogador.x + tamanhoJogador < screenWidth)) jogador.x += velocidade;
+                if (IsKeyDown(KEY_LEFT)  && (jogador.x > 0)) jogador.x -= velocidade;
+                if (IsKeyDown(KEY_DOWN)  && (jogador.y + tamanhoJogador < screenHeight)) jogador.y += velocidade;
+                if (IsKeyDown(KEY_UP)    && (jogador.y > 0)) jogador.y -= velocidade;
+
+                // Checar colisão com moedas
+                for (int i = 0; i < totalMoedas; i++) {
+                    if (moedas[i].ativa && CheckCollisionRecs(jogador, moedas[i].rec)) {
+                        moedas[i].ativa = false; // Coletou a moeda
+                        pontos++;
+                    }
+                }
+
+                // Checar condição de vitória
+                if (pontos >= totalMoedas) {
+                    estadoAtual = VICTORY;
+                }
+
+                // Checar colisão com obstáculos (Game Over)
+                for (int i = 0; i < 4; i++) {
+                    if (CheckCollisionRecs(jogador, obstaculos[i])) {
+                        estadoAtual = GAME_OVER;
+                    }
+                }
+                break;
+
+            case GAME_OVER:
+            case VICTORY:
+                // Resetar o jogo apertando R
+                if (IsKeyPressed(KEY_R)) {
+                    jogador.x = 400.0f;
+                    jogador.y = 225.0f;
+                    pontos = 0;
+                    for (int i = 0; i < totalMoedas; i++) moedas[i].ativa = true;
+                    estadoAtual = GAME;
+                } else if (IsKeyPressed(KEY_M)) {
+                    jogador.x = 400.0f;
+                    jogador.y = 225.0f;
+                    pontos = 0;
+                    for (int i = 0; i < totalMoedas; i++) moedas[i].ativa = true;
+                    estadoAtual = MENU;
+                }
+                break;
+        }
+
+        // ====================================================================
+        // 2. DESENHO
+        // ====================================================================
+        BeginDrawing();
+        ClearBackground(RAYWHITE); // Fundo mais claro para destacar as cores
+
+        switch (estadoAtual) {
+            case MENU:
+                DrawText("CACADOR DE MOEDAS", 200, 90, 40, DARKBLUE);
+                DrawText("Pressione ENTER para jogar", 250, 190, 22, BLACK);
+                DrawText("Pressione I para instrucoes", 260, 230, 22, DARKGRAY);
+                break;
+
+            case INSTRUCTIONS:
+                DrawText("INSTRUCOES", 300, 80, 32, DARKBLUE);
+                DrawText("- Use as setas para mover.", 180, 160, 22, BLACK);
+                DrawText("- Colete os blocos AMARELOS.", 180, 200, 22, GOLD);
+                DrawText("- Evite os blocos VERMELHOS!", 180, 240, 22, RED);
+                DrawText("Pressione BACKSPACE para voltar.", 180, 320, 22, DARKGRAY);
+                break;
+
+            case GAME:
+                // Desenhar placar usando TextFormat (muito útil no Raylib)
+                DrawText(TextFormat("PONTOS: %d / %d", pontos, totalMoedas), 20, 20, 24, BLACK);
+
+                // Desenhar obstáculos (Lava)
+                for (int i = 0; i < 4; i++) {
+                    DrawRectangleRec(obstaculos[i], RED);
+                }
+
+                // Desenhar moedas ativas
+                for (int i = 0; i < totalMoedas; i++) {
+                    if (moedas[i].ativa) {
+                        DrawRectangleRec(moedas[i].rec, GOLD);
+                    }
+                }
+
+                // Desenhar jogador
+                DrawRectangleRec(jogador, DARKBLUE);
+                break;
+
+            case GAME_OVER:
+                ClearBackground(BLACK);
+                DrawText("GAME OVER!", 260, 200, 50, RED);
+                DrawText("Voce tocou na lava.", 300, 270, 20, LIGHTGRAY);
+                DrawText("Pressione R para tentar novamente", 210, 350, 22, WHITE);
+                DrawText("Pressione M para o Menu", 265, 390, 22, GRAY);
+                break;
+
+            case VICTORY:
+                ClearBackground(DARKGREEN);
+                DrawText("VITORIA!!!", 280, 200, 50, GOLD);
+                DrawText("Voce coletou todas as moedas!", 230, 270, 22, WHITE);
+                DrawText("Pressione R para jogar novamente", 210, 350, 22, LIGHTGRAY);
+                DrawText("Pressione M para o Menu", 265, 390, 22, GRAY);
+                break;
+        }
+
+        EndDrawing();
+    }
+
+    // ====================================================================
+    // 3. LIMPEZA DE MEMÓRIA
+    // ====================================================================
+    UnloadSound(soundMenu);
+    UnloadSound(soundJogo);
+    CloseAudioDevice();
+    CloseWindow();
+
+    return 0;
+}
