@@ -51,3 +51,8 @@ for (int i = 0; i < 50; i++) {
         if (particulas[i].tempoVida <= 0) particulas[i].ativa = false;
     }
 }
+        particulas[i].posicao.y += particulas[i].velocidade.y;
+        particulas[i].tempoVida -= GetFrameTime();
+        if (particulas[i].tempoVida <= 0) particulas[i].ativa = false;
+    }
+}
