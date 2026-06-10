@@ -1,0 +1,62 @@
+#include <stdio.h> // Necessário para arquivos
+#include <math.h>  // Necessário para cálculos de distância
+
+// Inteligência Artificial (Aula 21)
+typedef enum EnemyState { PATRULHA, PERSEGUICAO } EnemyState;
+
+typedef struct {
+    Rectangle rec;
+    EnemyState estado;
+    float velocidade;
+} Inimigo;
+
+Inimigo goblin = { { 300, 130, 30, 30 }, PATRULHA, 2.0f };
+
+// Funções de Save/Load (Aula 22)
+void SalvarJogo(int score) {
+    FILE *arquivo = fopen("save.txt", "w");
+    if (arquivo != NULL) {
+        fprintf(arquivo, "%d", score);
+        fclose(arquivo);
+    }
+}
+
+int CarregarJogo() {
+    int scoreSalvo = 0;
+    FILE *arquivo = fopen("save.txt", "r");
+    if (arquivo != NULL) {
+        fscanf(arquivo, "%d", &scoreSalvo);
+        fclose(arquivo);
+    }
+    return scoreSalvo;
+}
+
+// --- ANTES DO LOOP PRINCIPAL ---
+// score = CarregarJogo(); // Carrega o score anterior
+
+// --- DENTRO DO LOOP (Estado GAME) ---
+
+// Salvar apertando 'S'
+if (IsKeyPressed(KEY_S)) SalvarJogo(score);
+
+// Lógica de IA (Aula 21)
+// Calcula distância entre jogador e goblin
+float dist = sqrt(pow(jogador.x - goblin.rec.x, 2) + pow(jogador.y - goblin.rec.y, 2));
+
+if (dist < 150.0f) {
+    goblin.estado = PERSEGUICAO;
+} else {
+    goblin.estado = PATRULHA;
+}
+
+if (goblin.estado == PERSEGUICAO) {
+    // Segue o jogador
+    if (goblin.rec.x < jogador.x) goblin.rec.x += goblin.velocidade;
+    if (goblin.rec.x > jogador.x) goblin.rec.x -= goblin.velocidade;
+} else if (goblin.estado == PATRULHA) {
+    // Lógica simples de ir e voltar sozinha
+    goblin.rec.x += sin(GetTime()) * goblin.velocidade; 
+}
+
+// --- DENTRO DO BeginMode2D() ---
+DrawRectangleRec(goblin.rec, PURPLE); // Desenha Inimigo

@@ -1,0 +1,39 @@
+#include "raylib.h"
+
+// 1. Definição dos Estados (Aula 14)
+typedef enum GameState { MENU, GAME, INSTRUCTIONS, GAME_OVER } GameState;
+
+int main(void) {
+    InitWindow(800, 450, "PR 1 - Fluxo e HUD");
+    SetTargetFPS(60);
+
+    GameState estadoAtual = MENU;
+    int vida = 100; // Dado para a HUD (Aula 15)
+    int score = 0;
+
+    while (!WindowShouldClose()) {
+        // Lógica de Transição de Telas
+        if (estadoAtual == MENU && IsKeyPressed(KEY_ENTER)) estadoAtual = GAME;
+        if (estadoAtual == GAME && IsKeyPressed(KEY_G)) estadoAtual = GAME_OVER;
+        if (estadoAtual == GAME_OVER && IsKeyPressed(KEY_R)) estadoAtual = MENU;
+
+        BeginDrawing();
+        ClearBackground(RAYWHITE);
+
+        if (estadoAtual == MENU) {
+            DrawText("MENU INICIAL - Pressione ENTER", 200, 200, 20, DARKGRAY);
+        } else if (estadoAtual == GAME) {
+            DrawText("Jogando...", 350, 200, 20, BLUE);
+            
+            // Lógica da HUD - Desenhada por cima do jogo (Aula 15)
+            DrawRectangle(10, 10, 200, 50, Fade(BLACK, 0.5f));
+            DrawText(TextFormat("VIDA: %d | SCORE: %d", vida, score), 20, 25, 16, GREEN);
+        } else if (estadoAtual == GAME_OVER) {
+            DrawText("GAME OVER - Pressione R", 250, 200, 20, RED);
+        }
+
+        EndDrawing();
+    }
+    CloseWindow();
+    return 0;
+}

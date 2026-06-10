@@ -1,0 +1,51 @@
+// 1. Definição do Mapa (Aula 19 - Tilemap)
+#define TAMANHO_TILE 40
+int mapa[5][10] = {
+    {0,0,0,0,0,0,0,0,0,0},
+    {0,0,0,0,0,0,0,0,0,0},
+    {0,0,0,1,1,0,0,0,0,0},
+    {0,0,0,0,0,0,0,1,1,0},
+    {1,1,1,1,1,1,1,1,1,1} // Chão
+};
+
+// Variáveis de Física (Aula 20)
+Rectangle jogador = { 50, 50, 30, 30 };
+float velocidadeY = 0.0f;
+float gravidade = 0.5f;
+
+// Variável de Câmera (Aula 18)
+Camera2D camera = { 0 };
+camera.zoom = 1.5f;
+
+// --- DENTRO DO LOOP (Estado GAME) ---
+
+// Física (Aula 20)
+velocidadeY += gravidade;
+jogador.y += velocidadeY;
+
+// Colisão simples com o chão (Tilemap)
+if (jogador.y >= 4 * TAMANHO_TILE - jogador.height) {
+    jogador.y = 4 * TAMANHO_TILE - jogador.height;
+    velocidadeY = 0;
+    if (IsKeyPressed(KEY_SPACE)) velocidadeY = -10.0f; // Pulo
+}
+
+// Movimento Horizontal
+if (IsKeyDown(KEY_RIGHT)) jogador.x += 4.0f;
+if (IsKeyDown(KEY_LEFT)) jogador.x -= 4.0f;
+
+// Câmera segue o jogador (Aula 18)
+camera.target = (Vector2){ jogador.x, jogador.y };
+camera.offset = (Vector2){ 400, 225 }; // Centro da tela
+
+// --- DENTRO DO BeginDrawing() -> estado GAME ---
+BeginMode2D(camera);
+    // Desenha Tilemap (Aula 19)
+    for (int l = 0; l < 5; l++) {
+        for (int c = 0; c < 10; c++) {
+            if (mapa[l][c] == 1) DrawRectangle(c * TAMANHO_TILE, l * TAMANHO_TILE, TAMANHO_TILE, TAMANHO_TILE, DARKGRAY);
+        }
+    }
+    DrawRectangleRec(jogador, RED); // Desenha jogador
+EndMode2D();
+// (A HUD do PR 1 deve ser desenhada AQUI, depois do EndMode2D)
