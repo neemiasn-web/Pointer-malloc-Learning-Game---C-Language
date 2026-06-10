@@ -1,0 +1,53 @@
+// Estrutura de Partícula (Aula 16)
+typedef struct {
+    Vector2 posicao;
+    Vector2 velocidade;
+    float tempoVida;
+    bool ativa;
+} Particula;
+
+Particula particulas[50] = {0}; // Inicializa array de partículas
+
+// Carregando Sprite Sheet do Jogador (Aula 17 - Fazer antes do While)
+Texture2D spriteSheet = LoadTexture("jogador_sprites.png"); // Requer imagem real
+Rectangle frameRec = { 0.0f, 0.0f, (float)spriteSheet.width/4, (float)spriteSheet.height }; // 4 frames
+int frameAtual = 0;
+int framesCounter = 0;
+
+// --- DENTRO DO LOOP (Estado GAME) ---
+
+// Animação (Aula 17)
+framesCounter++;
+if (framesCounter >= 10) { // Velocidade da animação
+    framesCounter = 0;
+    frameAtual++;
+    if (frameAtual > 3) frameAtual = 0;
+    frameRec.x = (float)frameAtual * (float)spriteSheet.width/4;
+}
+
+// Gerar Partículas ao pular (Aula 16)
+if (IsKeyPressed(KEY_SPACE)) {
+    for (int i = 0; i < 10; i++) {
+        if (!particulas[i].ativa) {
+            particulas[i].ativa = true;
+            particulas[i].posicao = (Vector2){ jogador.x, jogador.y + jogador.height };
+            particulas[i].velocidade = (Vector2){ GetRandomValue(-2, 2), GetRandomValue(-2, 0) };
+            particulas[i].tempoVida = 1.0f;
+        }
+    }
+}
+
+// --- DENTRO DO BeginMode2D() ---
+// Substituir DrawRectangleRec por:
+DrawTextureRec(spriteSheet, frameRec, (Vector2){ jogador.x, jogador.y }, WHITE);
+
+// Desenhar Partículas
+for (int i = 0; i < 50; i++) {
+    if (particulas[i].ativa) {
+        DrawRectangleV(particulas[i].posicao, (Vector2){4, 4}, ORANGE);
+        particulas[i].posicao.x += particulas[i].velocidade.x;
+        particulas[i].posicao.y += particulas[i].velocidade.y;
+        particulas[i].tempoVida -= GetFrameTime();
+        if (particulas[i].tempoVida <= 0) particulas[i].ativa = false;
+    }
+}
